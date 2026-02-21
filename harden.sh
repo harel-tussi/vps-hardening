@@ -1,4 +1,32 @@
 #!/bin/bash
+#
+# VPS Hardening Script
+# ====================
+#
+# BEFORE RUNNING THIS SCRIPT:
+# ---------------------------
+# You must set up SSH keys or you will be LOCKED OUT!
+#
+# 1. On your LOCAL machine, generate a key (if you don't have one):
+#
+#    ssh-keygen -t ed25519 -C "your-email@example.com"
+#
+# 2. Copy your public key to the VPS:
+#
+#    ssh-copy-id root@your-vps-ip
+#
+#    Or manually:
+#    cat ~/.ssh/id_ed25519.pub | ssh root@your-vps-ip "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+#
+# 3. Test SSH key login works (should not ask for password):
+#
+#    ssh root@your-vps-ip
+#
+# 4. Now run this script:
+#
+#    ./harden.sh username
+#
+# ====================
 
 set -e
 
@@ -25,6 +53,40 @@ if [[ $EUID -ne 0 ]]; then
     log_error "This script must be run as root"
     exit 1
 fi
+
+# Check for SSH keys
+echo ""
+echo "============================================"
+echo -e "${YELLOW}SSH KEY CHECK${NC}"
+echo "============================================"
+if [[ -f /root/.ssh/authorized_keys ]] && [[ -s /root/.ssh/authorized_keys ]]; then
+    log_info "Found SSH authorized_keys with $(wc -l < /root/.ssh/authorized_keys) key(s)"
+    echo ""
+    echo "Keys found:"
+    cat /root/.ssh/authorized_keys | while read -r line; do
+        # Show key type and comment (last two fields)
+        echo "  - $(echo "$line" | awk '{print $1, $NF}')"
+    done
+    echo ""
+else
+    log_error "No SSH keys found in /root/.ssh/authorized_keys!"
+    echo ""
+    echo "You MUST set up SSH keys before running this script."
+    echo "Otherwise you will be LOCKED OUT when password auth is disabled."
+    echo ""
+    echo "On your LOCAL machine, run:"
+    echo "  ssh-copy-id root@$(hostname -I | awk '{print $1}')"
+    echo ""
+    echo "Then run this script again."
+    exit 1
+fi
+
+read -p "Are your SSH keys set up correctly? Test in another terminal first! [y/N]: " CONFIRM_KEYS
+if [[ ! "$CONFIRM_KEYS" =~ ^[Yy]$ ]]; then
+    log_warn "Aborted. Please set up SSH keys and try again."
+    exit 0
+fi
+echo ""
 
 # Get new username from argument or prompt
 NEW_USER="${1:-}"
