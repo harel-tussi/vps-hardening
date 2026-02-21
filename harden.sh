@@ -60,6 +60,11 @@ echo "============================================"
 echo -e "${YELLOW}SSH KEY CHECK${NC}"
 echo "============================================"
 if [[ -f /root/.ssh/authorized_keys ]] && [[ -s /root/.ssh/authorized_keys ]]; then
+    # Fix permissions (common issue that prevents key auth from working)
+    chmod 700 /root/.ssh
+    chmod 600 /root/.ssh/authorized_keys
+    log_info "Fixed SSH directory permissions"
+
     log_info "Found SSH authorized_keys with $(wc -l < /root/.ssh/authorized_keys) key(s)"
     echo ""
     echo "Keys found:"
