@@ -173,10 +173,19 @@ set_ssh_option "MaxAuthTries" "3"
 set_ssh_option "ClientAliveInterval" "300"
 set_ssh_option "ClientAliveCountMax" "2"
 
+# Detect SSH service name (ssh on Ubuntu/Debian, sshd on RHEL/CentOS)
+if systemctl list-units --type=service | grep -q "ssh.service"; then
+    SSH_SERVICE="ssh"
+elif systemctl list-units --type=service | grep -q "sshd.service"; then
+    SSH_SERVICE="sshd"
+else
+    SSH_SERVICE="ssh"
+fi
+
 # Validate SSH config before restarting
 if sshd -t; then
     log_info "SSH configuration is valid"
-    systemctl restart sshd
+    systemctl restart "$SSH_SERVICE"
     log_info "SSH service restarted"
 else
     log_error "SSH configuration is invalid! Restoring backup..."
@@ -226,7 +235,7 @@ if [[ -n "$TAILSCALE_IP" ]]; then
 
         # Validate and restart SSH again
         if sshd -t; then
-            systemctl restart sshd
+            systemctl restart "$SSH_SERVICE"
             log_info "SSH service restarted with Tailscale restriction"
         else
             log_error "SSH configuration invalid! Removing ListenAddress..."
