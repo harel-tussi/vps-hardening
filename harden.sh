@@ -174,13 +174,19 @@ set_ssh_option "ClientAliveInterval" "300"
 set_ssh_option "ClientAliveCountMax" "2"
 
 # Detect SSH service name (ssh on Ubuntu/Debian, sshd on RHEL/CentOS)
-if systemctl list-units --type=service | grep -q "ssh.service"; then
+if [[ -f /lib/systemd/system/ssh.service ]] || [[ -f /etc/systemd/system/ssh.service ]]; then
     SSH_SERVICE="ssh"
-elif systemctl list-units --type=service | grep -q "sshd.service"; then
+elif [[ -f /lib/systemd/system/sshd.service ]] || [[ -f /etc/systemd/system/sshd.service ]]; then
     SSH_SERVICE="sshd"
 else
-    SSH_SERVICE="ssh"
+    # Fallback: try to detect running service
+    if systemctl is-active --quiet ssh 2>/dev/null; then
+        SSH_SERVICE="ssh"
+    else
+        SSH_SERVICE="sshd"
+    fi
 fi
+log_info "Detected SSH service: $SSH_SERVICE"
 
 # Validate SSH config before restarting
 if sshd -t; then
