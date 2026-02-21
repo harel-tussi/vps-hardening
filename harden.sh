@@ -3,6 +3,12 @@
 # VPS Hardening Script
 # ====================
 #
+# INSTALLATION:
+# -------------
+# curl -sL https://raw.githubusercontent.com/harel-tussi/vps-hardening/main/harden.sh -o harden.sh
+# chmod +x harden.sh
+# ./harden.sh username
+#
 # BEFORE RUNNING THIS SCRIPT:
 # ---------------------------
 # You must set up SSH keys or you will be LOCKED OUT!
